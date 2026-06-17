@@ -76,6 +76,8 @@ class RoboroarzController:
         self.prev_right = 0.0
         self.pre_turn_start_x = 0.0
         self.pre_turn_start_y = 0.0
+        self.move_start_x = 0.0
+        self.move_start_y = 0.0
         
         # Goal State & Queuing
         self.current_cell_x = 0
@@ -88,6 +90,7 @@ class RoboroarzController:
         self.state = STATE_SCAN
         self.target_heading_rad = 0.0 
         self.tag_sequence_started = False
+        
         
         # New Goal Management Variables
         self.goal_queue = []
@@ -120,25 +123,34 @@ class RoboroarzController:
         self.pos_y += linear_dist * math.cos(rel_angle) 
 
     def decode_tag(self):
-        # --- THE FIX: Return a LIST of all tags found in the frame ---
         img = self.camera.getImage()
-        if not img: return []
-        frame = np.frombuffer(img, np.uint8).reshape((self.camera.getHeight(), self.camera.getWidth(), 4))
+        if not img:
+            return []
+
+        h = self.camera.getHeight()
+        w = self.camera.getWidth()
+        frame = np.frombuffer(img, np.uint8).reshape((h, w, 4))
         gray = cv2.cvtColor(frame, cv2.COLOR_BGRA2GRAY)
-        aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+
+        CAM_W, CAM_H = 640, 480
+        if gray.shape != (CAM_H, CAM_W):
+            gray = cv2.resize(gray, (CAM_W, CAM_H), interpolation=cv2.INTER_AREA)
+
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+
+        aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250)
         detector = cv2.aruco.ArucoDetector(aruco_dict, cv2.aruco.DetectorParameters())
         corners, ids, _ = detector.detectMarkers(gray)
-        
+
         found_tags = []
         if ids is not None:
-            # Loop through every tag detected in the current camera frame
             for i in range(len(ids)):
-                # Lowered from 800 to 50 so it successfully detects tags further down the hall
-                if abs(cv2.contourArea(corners[i][0])) >= 50: 
+                area = abs(cv2.contourArea(corners[i][0]))
+                if 120 <= area <= 20000:
                     val = int(ids[i][0])
                     tag_coord = ((val >> 4) & 0x0F, val & 0x0F)
                     found_tags.append(tag_coord)
-                    
+
         return found_tags
 
     # --- MAPPING LOGIC ---
@@ -241,7 +253,7 @@ class RoboroarzController:
             if self.walls[x][0] & (1 << DIR_BCK): print("---", end="")
             else: print("   ", end="")
         print("+\n=====================================================")
-
+    
     # --- MAIN LOOP ---
     def run(self):
         for _ in range(15): self.robot.step(TIME_STEP)
@@ -390,6 +402,8 @@ class RoboroarzController:
                 if abs(diff) < 0.05:
                     self.pos_x = self.current_cell_x * TILE_SIZE
                     self.pos_y = self.current_cell_y * TILE_SIZE
+                    self.move_start_x = self.pos_x
+                    self.move_start_y = self.pos_y
                     self.state = STATE_MOVE
                     self.print_maze_detailed() 
                 else:
@@ -401,8 +415,15 @@ class RoboroarzController:
                 front_val = (self.ps[0].getValue() + self.ps[7].getValue()) / 2.0
                 if front_val > COLLISION_THRESHOLD:
                     print(">> [COLLISION] Path blocked mid-move! Re-scanning...")
+                    
                     self.left_motor.setVelocity(0)
                     self.right_motor.setVelocity(0)
+                    
+                    dx = self.pos_x - self.move_start_x
+                    dy = self.pos_y - self.move_start_y
+                    if abs(dx) > TILE_SIZE * 0.7 or abs(dy) > TILE_SIZE * 0.7:
+                        self.current_cell_x = self.target_cell_x
+                        self.current_cell_y = self.target_cell_y
                     
                     c_dir = self.get_heading_enum()
                     self.set_wall(self.current_cell_x, self.current_cell_y, c_dir)

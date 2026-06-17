@@ -4,7 +4,7 @@ import cv2
 img = cv2.imread("B.png", cv2.IMREAD_GRAYSCALE)
 
 # Set up the detector exactly like your robot
-aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250)
 detector = cv2.aruco.ArucoDetector(aruco_dict)
 
 # Scan the image

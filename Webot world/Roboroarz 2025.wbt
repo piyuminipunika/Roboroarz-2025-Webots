@@ -9,8 +9,8 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/project
 WorldInfo {
 }
 Viewpoint {
-  orientation -0.2757394669625716 -0.8271915852914777 0.48961395770767085 5.087706814419851
-  position 0.690035249910114 -1.1658852994135966 1.0461915996334645
+  orientation -0.4398901764501361 0.45493883154532433 0.7742914775553472 1.7911663268525246
+  position -0.5177904369978366 -4.887503225611221 8.657759906037976
   follow "e-puck"
   followType "None"
 }
@@ -224,13 +224,13 @@ Wall {
   size 0.01 1 0.1
 }
 Wall {
-  translation 0.769999 1.255 0.02
+  translation 0.749999 1.265 0
   rotation 0 0 1 1.5708
   name "wall(52)"
   size 0.01 1 0.1
 }
 Wall {
-  translation -0.740001 1.255 0.02
+  translation -0.740001 1.245 0
   rotation 0 0 1 1.5708
   name "wall(53)"
   size 0.01 1 0.1
@@ -246,7 +246,7 @@ Wall {
   size 0.01 0.25 0.1
 }
 Wall {
-  translation 0.5 1.125 0
+  translation 0.5 1.135 0
   name "wall(15)"
   size 0.01 0.25 0.1
 }
@@ -1917,6 +1917,7 @@ Robot {
   controllerArgs [
     ""
   ]
+  customData "Black"
   cpuConsumption 1.11
   remoteControl "e-puck_wifi"
 }
@@ -1928,7 +1929,7 @@ Solid {
       translation 1.85 2.52 0
       size 0.01 0.25 0.12
       appearance PBRAppearance {
-        baseColor 0 0 1
+        baseColor 1 0 0
         roughness 1
         metalness 0
       }
